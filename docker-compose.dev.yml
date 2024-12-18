@@ -1,0 +1,8 @@
+
+
+services:
+  backend:
+    image: glang:bookworm
+    ports:
+      - 8080:8080
+   
