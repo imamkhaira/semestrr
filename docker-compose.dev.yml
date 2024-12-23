@@ -1,8 +1,68 @@
+# This is the Docker stack for development.
+# You can remote into the container to do some development work,
+# and all changes will be available in the project folder.
+# for production uses, please use docker-compose.prod.yml
 
+volumes:
+  database:
 
 services:
-  backend:
-    image: glang:bookworm
+  frontend:
+    image: node:lts-bookworm
+    container_name: ${COMPOSE_PROJECT_NAME}-dev-frontend
+    hostname: ${COMPOSE_PROJECT_NAME}-dev-frontend
+    depends_on: [ backend ]
+    tty: true
+    user: ${DOCKER_UID}:${DOCKER_GID}
     ports:
-      - 8080:8080
-   
+      - 8870:80
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - ${HOME}/.ssh:/${HOME}/.ssh:ro
+      - ./frontend:/app
+    restart: unless-stopped
+
+  backend:
+    image: golang:bookworm 
+    container_name: ${COMPOSE_PROJECT_NAME}-dev-backend
+    hostname: ${COMPOSE_PROJECT_NAME}-dev-backend
+    depends_on: [ database ]
+    tty: true
+    user: ${DOCKER_UID}:${DOCKER_GID}
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+    ports:
+      - 8871:80
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - ${HOME}/.ssh:/${HOME}/.ssh:ro
+      - ./backend:/app
+    restart: unless-stopped
+
+  database:
+    image: mariadb:lts-noble
+    container_name: ${COMPOSE_PROJECT_NAME}-dev-database
+    hostname: ${COMPOSE_PROJECT_NAME}-dev-database
+    environment:
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+      MARIADB_DATABASE: ${DB_DATABASE}
+    ports:
+      - 8872:3306
+    volumes:
+      - database:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    container_name: ${COMPOSE_PROJECT_NAME}-dev-adminer
+    depends_on: [ database ]
+    restart: always
+    ports:
+      - 8873:8080
+
+
