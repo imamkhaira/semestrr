@@ -25,10 +25,13 @@ services:
     ports:
       - 8870:80
     volumes:
-      - /etc/passwd:/etc/passwd:ro
-      - ${HOME}/.ssh:${HOME}/.ssh:ro
-      - ./:${HOME}/${COMPOSE_PROJECT_NAME}
+      - /etc/passwd:/etc/passwd:ro         # make the contaniner recognize your username
+      - ${HOME}/.ssh:${HOME}/.ssh:ro       # your ssh key to the container
+      - ./:${HOME}/${COMPOSE_PROJECT_NAME} # mount the entire project directory
     restart: unless-stopped
+    # NOTE: after this container started, run this command to 
+    # run chmod command as root then give yourself full permission to your home folder :
+    # `docker exec -it --user=0:0 app chown $DOCKER_UID:$DOCKER_GID /home/$HOME`
 
   database:
     image: mariadb:lts-noble
