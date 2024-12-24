@@ -1,0 +1,42 @@
+FROM ubuntu:noble AS source
+
+ARG NODE_VERSION=22.12.0
+ARG GOLANG_VERSION=1.23.4
+ARG TARGETOS
+ARG TARGETARCH
+
+# install required apt packages
+RUN apt update && apt upgrade -y
+RUN apt install git vim wget curl software-properties-common xz-utils -y
+
+# -- SETUP NODE JS --
+
+FROM source AS node-installed
+
+# replace 'amd' with 'x' to produce x64
+ENV NODE_FILE="node-v$NODE_VERSION-$TARGETOS-${TARGETARCH/amd/x}"
+RUN echo "fetching https://nodejs.org/dist/v$NODE_VERSION/$NODE_FILE.tar.xz"
+
+# fetch and xtract prebuilt node binary
+WORKDIR /usr/local
+RUN wget "https://nodejs.org/dist/v$NODE_VERSION/$NODE_FILE.tar.xz"
+RUN tar -xvf "$NODE_FILE.tar.xz" && rm "$NODE_FILE.tar.xz" && mv "$NODE_FILE" node
+
+# -- SETUP GOLANG --
+
+FROM node-installed
+
+# no need to replace 'amd' with 'x' to produce x64. fuck node.
+ENV GOLANG_FILE="go$GOLANG_VERSION.$TARGETOS-$TARGETARCH"
+RUN echo "fetching https://go.dev/dl/$GOLANG_FILE.tar.gz"
+
+# fetch and xtract prebuild golang binary
+RUN wget "https://go.dev/dl/$GOLANG_FILE.tar.gz"
+RUN tar -xvf "$GOLANG_FILE.tar.gz" && rm "$GOLANG_FILE.tar.gz"
+
+# add node and go to profile.d so it will be loaded by shell
+ENV PATH="$PATH:/usr/local/node/bin:/usr/local/go/bin"
+RUN echo "Updated PATH to $PATH"
+
+WORKDIR /
+
